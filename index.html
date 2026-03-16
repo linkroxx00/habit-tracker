@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Habitly — Your Daily Habit Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #18181f;
+    --surface2: #22222c;
+    --border: #2e2e3a;
+    --accent: #c8f55a;
+    --accent2: #7c6af5;
+    --accent3: #f5a55a;
+    --text: #f0f0f0;
+    --muted: #888;
+    --danger: #f55a7c;
+    --radius: 16px;
+    --font-head: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 80% 10%, rgba(124,106,245,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 10% 80%, rgba(200,245,90,0.07) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #app { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* HEADER */
+  header {
+    padding: 40px 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 36px;
+  }
+  .logo { font-family: var(--font-head); font-size: 2rem; font-weight: 900; letter-spacing: -1px; }
+  .logo span { color: var(--accent); }
+  .date-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  /* NAV TABS */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 5px;
+    margin-bottom: 32px;
+    width: fit-content;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    padding: 8px 20px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: #0f0f13;
+    font-weight: 600;
+  }
+  .tab-btn:not(.active):hover { color: var(--text); }
+
+  /* SECTIONS */
+  .section { display: none; animation: fadeUp 0.3s ease; }
+  .section.active { display: block; }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .section-title small {
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--muted);
+    display: block;
+    margin-top: 4px;
+  }
+
+  /* ADD HABIT FORM */
+  .add-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .input-wrap { flex: 1; min-width: 200px; }
+  .input-wrap label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+  input[type="text"], select, input[type="color"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border 0.2s;
+  }
+  input[type="text"]:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+  input[type="color"] { height: 42px; padding: 4px 8px; cursor: pointer; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 22px;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #0f0f13; }
+  .btn-primary:hover { background: #d4ff5f; transform: translateY(-1px); }
+  .btn-danger { background: rgba(245,90,124,0.15); color: var(--danger); border: 1px solid rgba(245,90,124,0.3); }
+  .btn-danger:hover { background: rgba(245,90,124,0.25); }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+  .form-actions { margin-top: 16px; display: flex; justify-content: flex-end; }
+
+  /* EMOJI PICKER */
+  .emoji-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .emoji-opt {
+    background: var(--surface2);
+    border: 2px solid transparent;
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .emoji-opt:hover, .emoji-opt.selected { border-color: var(--accent); background: rgba(200,245,90,0.1); }
+
+  /* HABIT LIST */
+  .habit-list-wrap { display: flex; flex-direction: column; gap: 12px; }
+  .habit-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: border-color 0.2s;
+  }
+  .habit-card:hover { border-color: var(--border); }
+  .habit-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+  .habit-info { flex: 1; min-width: 0; }
+  .habit-name { font-weight: 600; font-size: 1rem; margin-bottom: 2px; }
+  .habit-meta { font-size: 0.78rem; color: var(--muted); }
+  .habit-streak { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: var(--accent3); font-weight: 600; }
+  .habit-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 32px; height: 32px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    color: var(--muted);
+  }
+  .icon-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(245,90,124,0.1); }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty .big { font-size: 3rem; margin-bottom: 12px; }
+  .empty p { font-size: 0.9rem; }
+
+  /* CHECKLIST */
+  .checklist-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .today-label { font-size: 0.82rem; color: var(--muted); }
+  .check-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+    user-select: none;
+  }
+  .check-card:hover { border-color: var(--accent2); }
+  .check-card.done { border-color: var(--accent); background: rgba(200,245,90,0.05); }
+  .checkmark {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+  }
+  .check-card.done .checkmark {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0f0f13;
+    font-weight: 700;
+  }
+  .check-label { flex: 1; font-weight: 500; }
+  .check-card.done .check-label { text-decoration: line-through; color: var(--muted); }
+  .check-time { font-size: 0.75rem; color: var(--muted); }
+
+  /* PROGRESS */
+  .progress-ring-wrap { display: flex; justify-content: center; margin-bottom: 32px; }
+  .progress-ring { position: relative; width: 160px; height: 160px; }
+  .progress-ring svg { transform: rotate(-90deg); }
+  .progress-ring-text {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .progress-ring-text .pct { font-family: var(--font-head); font-size: 2.4rem; font-weight: 700; line-height: 1; }
+  .progress-ring-text .lbl { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-align: center;
+  }
+  .stat-val { font-family: var(--font-head); font-size: 1.8rem; font-weight: 700; }
+  .stat-label { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+  .habit-progress-item { margin-bottom: 16px; }
+  .hp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.88rem; }
+  .hp-bar-bg { background: var(--surface2); border-radius: 100px; height: 8px; overflow: hidden; }
+  .hp-bar { height: 100%; border-radius: 100px; transition: width 0.6s ease; }
+
+  /* CALENDAR */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .cal-month { font-family: var(--font-head); font-size: 1.3rem; font-weight: 700; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-day-name { text-align: center; font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; padding-bottom: 8px; letter-spacing: .04em; }
+  .cal-cell {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    gap: 2px;
+    position: relative;
+  }
+  .cal-cell.other-month { color: #333; }
+  .cal-cell.today { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .cal-cell.has-data { background: var(--surface); border-color: var(--border); }
+  .cal-cell .dot-row { display: flex; gap: 2px; }
+  .cal-cell .dot { width: 5px; height: 5px; border-radius: 50%; }
+  .cal-cell:hover.has-data { border-color: var(--accent2); }
+  .cal-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 20px; }
+  .cal-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--muted); }
+  .cal-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 10px 22px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 999;
+    white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 600px) {
+    .form-row { flex-direction: column; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .tabs { flex-wrap: wrap; border-radius: var(--radius); }
+    .tab-btn { flex: 1; text-align: center; }
+    header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="logo">habit<span>ly</span></div>
+    <div class="date-badge" id="headerDate"></div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="showTab('add')">＋ Add Habit</button>
+    <button class="tab-btn" onclick="showTab('list')">📋 My Habits</button>
+    <button class="tab-btn" onclick="showTab('checklist')">✅ Today</button>
+    <button class="tab-btn" onclick="showTab('calendar')">📅 Calendar</button>
+    <button class="tab-btn" onclick="showTab('progress')">📊 Progress</button>
+  </nav>
+
+  <!-- ADD HABIT -->
+  <section id="tab-add" class="section active">
+    <div class="section-title">Add a New Habit<small>Build consistency, one habit at a time.</small></div>
+    <div class="add-form">
+      <div class="form-row">
+        <div class="input-wrap">
+          <label>Habit Name</label>
+          <input type="text" id="habitName" placeholder="e.g. Morning Run" maxlength="40"/>
+        </div>
+        <div class="input-wrap" style="max-width:160px;">
+          <label>Color</label>
+          <input type="color" id="habitColor" value="#c8f55a"/>
+        </div>
+      </div>
+      <div style="margin-top:16px;">
+        <label style="font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:8px;">Pick an Icon</label>
+        <div class="emoji-row" id="emojiPicker"></div>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="input-wrap">
+          <label>Frequency</label>
+          <select id="habitFreq">
+            <option value="daily">Every Day</option>
+            <option value="weekdays">Weekdays (Mon–Fri)</option>
+            <option value="weekends">Weekends</option>
+            <option value="3x">3× per Week</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="addHabit()">＋ Add Habit</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- HABIT LIST -->
+  <section id="tab-list" class="section">
+    <div class="section-title">My Habits<small id="habitCount"></small></div>
+    <div class="habit-list-wrap" id="habitList"></div>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section id="tab-checklist" class="section">
+    <div class="checklist-header">
+      <div class="section-title" style="margin-bottom:0">Today's Habits<small id="checklistDate"></small></div>
+      <div id="todayPct" style="font-family:var(--font-head);font-size:1.4rem;font-weight:700;color:var(--accent)"></div>
+    </div>
+    <div id="checklistItems"></div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section id="tab-calendar" class="section">
+    <div class="section-title">Calendar View<small>See your habit activity over time.</small></div>
+    <div class="cal-nav">
+      <button class="btn btn-ghost" onclick="calPrev()">← Prev</button>
+      <div class="cal-month" id="calMonthLabel"></div>
+      <button class="btn btn-ghost" onclick="calNext()">Next →</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend" id="calLegend"></div>
+  </section>
+
+  <!-- PROGRESS -->
+  <section id="tab-progress" class="section">
+    <div class="section-title">Progress<small>Your overall performance this week.</small></div>
+    <div class="progress-ring-wrap">
+      <div class="progress-ring">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="68" fill="none" stroke="var(--surface2)" stroke-width="12"/>
+          <circle cx="80" cy="80" r="68" fill="none" stroke="var(--accent)" stroke-width="12"
+            stroke-linecap="round" stroke-dasharray="427" id="progressCircle" stroke-dashoffset="427"/>
+        </svg>
+        <div class="progress-ring-text">
+          <span class="pct" id="progressPct">0%</span>
+          <span class="lbl">this week</span>
+        </div>
+      </div>
+    </div>
+    <div class="stats-grid" id="statsGrid"></div>
+    <div class="section-title" style="font-size:1.1rem;margin-bottom:16px;">Per-Habit Progress <small>Last 7 days</small></div>
+    <div id="habitProgressBars"></div>
+  </section>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ───────── DATA ─────────
+const EMOJIS = ['🏃','💪','📚','🧘','💧','🥗','😴','✍️','🎯','🎨','🎵','🧹','💊','🚴','🌿','🍎','🧠','🌅','☕','🏋️'];
+let selectedEmoji = EMOJIS[0];
+
+function load(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+let habits = load('hb_habits', []);
+let logs   = load('hb_logs', {});   // { "YYYY-MM-DD": { habitId: true/false } }
+
+function saveAll() { save('hb_habits', habits); save('hb_logs', logs); }
+
+// ───────── UTILS ─────────
+function todayKey() { return new Date().toISOString().slice(0,10); }
+function fmtDate(d) { return d.toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'}); }
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+function isScheduled(habit, dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay(); // 0=Sun
+  if (habit.freq === 'daily') return true;
+  if (habit.freq === 'weekdays') return dow >= 1 && dow <= 5;
+  if (habit.freq === 'weekends') return dow === 0 || dow === 6;
+  if (habit.freq === '3x') return [1,3,5].includes(dow);
+  return true;
+}
+
+function completionRateForHabit(habitId, days=7) {
+  let done=0, total=0;
+  for (let i=0;i<days;i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = d.toISOString().slice(0,10);
+    const h = habits.find(x=>x.id===habitId);
+    if (!h) continue;
+    if (isScheduled(h, k)) { total++; if (logs[k]?.[habitId]) done++; }
+  }
+  return total ? Math.round(done/total*100) : 0;
+}
+
+function streakForHabit(habitId) {
+  let streak = 0;
+  for (let i=0;;i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const k = d.toISOString().slice(0,10);
+    const h = habits.find(x=>x.id===habitId);
+    if (!h) break;
+    if (!isScheduled(h, k)) continue;
+    if (logs[k]?.[habitId]) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// ───────── EMOJI PICKER ─────────
+function renderEmojiPicker() {
+  const wrap = document.getElementById('emojiPicker');
+  wrap.innerHTML = EMOJIS.map(e =>
+    `<div class="emoji-opt${e===selectedEmoji?' selected':''}" onclick="selectEmoji('${e}')">${e}</div>`
+  ).join('');
+}
+function selectEmoji(e) { selectedEmoji=e; renderEmojiPicker(); }
+
+// ───────── ADD HABIT ─────────
+function addHabit() {
+  const name = document.getElementById('habitName').value.trim();
+  if (!name) { toast('Please enter a habit name.'); return; }
+  const color = document.getElementById('habitColor').value;
+  const freq  = document.getElementById('habitFreq').value;
+  habits.push({ id: uid(), name, icon: selectedEmoji, color, freq, createdAt: todayKey() });
+  saveAll();
+  document.getElementById('habitName').value = '';
+  toast('Habit added! 🎉');
+  renderAll();
+}
+
+// ───────── HABIT LIST ─────────
+function renderHabitList() {
+  const wrap = document.getElementById('habitList');
+  const cnt  = document.getElementById('habitCount');
+  cnt.textContent = `${habits.length} habit${habits.length!==1?'s':''} tracked`;
+  if (!habits.length) {
+    wrap.innerHTML = `<div class="empty"><div class="big">🌱</div><p>No habits yet. Add your first one!</p></div>`;
+    return;
+  }
+  wrap.innerHTML = habits.map(h => {
+    const streak = streakForHabit(h.id);
+    const rate   = completionRateForHabit(h.id);
+    return `
+      <div class="habit-card">
+        <div class="habit-icon" style="background:${h.color}22">${h.icon}</div>
+        <div class="habit-info">
+          <div class="habit-name">${h.name}</div>
+          <div class="habit-meta">${freqLabel(h.freq)} · ${rate}% this week</div>
+        </div>
+        <div class="habit-streak">🔥 ${streak}d</div>
+        <div class="habit-actions">
+          <div class="icon-btn" onclick="deleteHabit('${h.id}')" title="Delete">🗑</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+function freqLabel(f) {
+  return {daily:'Daily',weekdays:'Weekdays',weekends:'Weekends','3x':'3× / Week'}[f]||f;
+}
+function deleteHabit(id) {
+  if (!confirm('Delete this habit and all its data?')) return;
+  habits = habits.filter(h=>h.id!==id);
+  saveAll(); renderAll(); toast('Habit deleted.');
+}
+
+// ───────── CHECKLIST ─────────
+function renderChecklist() {
+  const today = todayKey();
+  const todayHabits = habits.filter(h => isScheduled(h, today));
+  const done = todayHabits.filter(h => logs[today]?.[h.id]).length;
+  const pct  = todayHabits.length ? Math.round(done/todayHabits.length*100) : 0;
+
+  document.getElementById('checklistDate').textContent = fmtDate(new Date());
+  document.getElementById('todayPct').textContent = `${pct}%`;
+
+  const wrap = document.getElementById('checklistItems');
+  if (!habits.length) {
+    wrap.innerHTML = `<div class="empty"><div class="big">📋</div><p>Add some habits first!</p></div>`; return;
+  }
+  if (!todayHabits.length) {
+    wrap.innerHTML = `<div class="empty"><div class="big">🎉</div><p>No habits scheduled for today!</p></div>`; return;
+  }
+  wrap.innerHTML = todayHabits.map(h => {
+    const checked = logs[today]?.[h.id] || false;
+    const time    = logs[today]?.[h.id+'_time'] || '';
+    return `
+      <div class="check-card${checked?' done':''}" onclick="toggleCheck('${h.id}')">
+        <div class="habit-icon" style="background:${h.color}22;width:38px;height:38px;border-radius:10px;font-size:1.2rem;display:flex;align-items:center;justify-content:center;">${h.icon}</div>
+        <div class="checkmark">${checked?'✓':''}</div>
+        <div class="check-label">${h.name}</div>
+        ${time?`<div class="check-time">${time}</div>`:''}
+      </div>`;
+  }).join('');
+}
+function toggleCheck(id) {
+  const today = todayKey();
+  if (!logs[today]) logs[today] = {};
+  const now = logs[today][id];
+  logs[today][id] = !now;
+  if (!now) {
+    const t = new Date();
+    logs[today][id+'_time'] = t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  } else {
+    delete logs[today][id+'_time'];
+  }
+  saveAll(); renderChecklist(); renderProgress();
+}
+
+// ───────── CALENDAR ─────────
+let calYear, calMonth;
+function initCal() {
+  const now = new Date();
+  calYear  = now.getFullYear();
+  calMonth = now.getMonth();
+}
+function renderCalendar() {
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('calMonthLabel').textContent = `${months[calMonth]} ${calYear}`;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const todayStr = todayKey();
+
+  // Day names
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = dayNames.map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+
+  // Empty cells
+  for (let i=0;i<firstDay;i++) {
+    const prevDate = new Date(calYear, calMonth, -firstDay+i+1);
+    html += `<div class="cal-cell other-month">${prevDate.getDate()}</div>`;
+  }
+
+  for (let d=1;d<=daysInMonth;d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayHabits = habits.filter(h=>isScheduled(h,dateStr));
+    const donOnes   = dayHabits.filter(h=>logs[dateStr]?.[h.id]);
+    const isToday   = dateStr === todayStr;
+    const hasData   = dayHabits.length>0 && new Date(dateStr)<=new Date();
+
+    let dots = '';
+    if (hasData) {
+      const shown = donOnes.slice(0,5);
+      dots = `<div class="dot-row">${shown.map(h=>`<div class="dot" style="background:${h.color}"></div>`).join('')}</div>`;
+    }
+
+    html += `<div class="cal-cell${isToday?' today':''}${hasData?' has-data':''}" title="${dateStr}">
+      ${d}
+      ${dots}
+    </div>`;
+  }
+
+  document.getElementById('calGrid').innerHTML = html;
+
+  // Legend
+  const legWrap = document.getElementById('calLegend');
+  legWrap.innerHTML = habits.slice(0,6).map(h=>
+    `<div class="cal-legend-item"><div class="cal-legend-dot" style="background:${h.color}"></div>${h.name}</div>`
+  ).join('');
+}
+function calPrev() { calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCalendar(); }
+function calNext() { calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+
+// ───────── PROGRESS ─────────
+function renderProgress() {
+  // Week completion
+  let totalScheduled=0, totalDone=0;
+  for (let i=0;i<7;i++) {
+    const d=new Date(); d.setDate(d.getDate()-i);
+    const k=d.toISOString().slice(0,10);
+    habits.forEach(h=>{
+      if(isScheduled(h,k)){totalScheduled++;if(logs[k]?.[h.id])totalDone++;}
+    });
+  }
+  const weekPct = totalScheduled ? Math.round(totalDone/totalScheduled*100) : 0;
+  document.getElementById('progressPct').textContent = weekPct+'%';
+  const circumference = 427;
+  const offset = circumference - (weekPct/100)*circumference;
+  document.getElementById('progressCircle').style.strokeDashoffset = offset;
+
+  // Best streak
+  const bestStreak = habits.length ? Math.max(...habits.map(h=>streakForHabit(h.id))) : 0;
+  // Today done
+  const today = todayKey();
+  const todayDone = habits.filter(h=>isScheduled(h,today)&&logs[today]?.[h.id]).length;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent)">${habits.length}</div><div class="stat-label">Total Habits</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent3)">${bestStreak}🔥</div><div class="stat-label">Best Streak</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:var(--accent2)">${todayDone}</div><div class="stat-label">Done Today</div></div>
+  `;
+
+  const barsWrap = document.getElementById('habitProgressBars');
+  if (!habits.length) { barsWrap.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;">No habits to display.</p>'; return; }
+  barsWrap.innerHTML = habits.map(h=>{
+    const rate = completionRateForHabit(h.id,7);
+    return `<div class="habit-progress-item">
+      <div class="hp-header">
+        <span>${h.icon} ${h.name}</span>
+        <span style="color:var(--muted)">${rate}%</span>
+      </div>
+      <div class="hp-bar-bg">
+        <div class="hp-bar" style="width:${rate}%;background:${h.color}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ───────── TABS ─────────
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name==='list') renderHabitList();
+  if (name==='checklist') renderChecklist();
+  if (name==='calendar') renderCalendar();
+  if (name==='progress') renderProgress();
+}
+
+// ───────── TOAST ─────────
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ───────── INIT ─────────
+function renderAll() { renderHabitList(); renderChecklist(); renderProgress(); }
+
+document.getElementById('headerDate').textContent = fmtDate(new Date());
+renderEmojiPicker();
+initCal();
+renderAll();
+</script>
+</body>
+</html>
